@@ -1,0 +1,1068 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; media-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Whole Life of a Flower</title>
+<style>
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#03040a;color:#f3f4ff;font:500 14px system-ui,-apple-system,sans-serif;overscroll-behavior:none}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+header{position:fixed;left:0;right:0;top:calc(10px + env(safe-area-inset-top));text-align:center;pointer-events:none;text-shadow:0 1px 8px #000}
+h1{padding:0 52px;overflow-wrap:anywhere;font-size:clamp(13px,3.8vw,19px);letter-spacing:.14em;font-weight:700}
+#info{font-size:12px;opacity:.75;margin-top:4px;letter-spacing:.08em}
+#panel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(8px + env(safe-area-inset-bottom));width:min(520px,calc(100% - 16px));
+ background:rgba(13,15,34,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:10px;display:flex;flex-direction:column;gap:8px}
+button{background:rgba(255,255,255,.07);color:inherit;border:1px solid transparent;border-radius:14px;min-height:44px;min-width:44px;padding:0 14px;font:inherit;cursor:pointer;white-space:nowrap}
+button[aria-pressed=true],button[aria-selected=true]{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.6)}
+button:focus-visible,input:focus-visible{outline:2px solid #7fe;outline-offset:2px}
+#tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+#tabs button{padding:0 4px;background:none}
+#tabs button[aria-selected=true]{background:rgba(255,255,255,.14);border-color:transparent}
+.tray{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:3px}
+.tray[hidden]{display:none}
+.tray::-webkit-scrollbar{display:none}
+.tray button{flex:none}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:7px;vertical-align:-2px}
+input[type=color]{flex:none;width:44px;height:44px;border:0;padding:4px;background:none;cursor:pointer}
+.bar{display:flex;align-items:center;gap:6px}
+.bar button{padding:0;font-size:17px;width:44px;flex:none}
+input[type=range]{flex:1;min-width:0;height:44px;accent-color:#7ff5e0;background:none}
+#show{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));display:none;opacity:.5}
+body.clean #panel{display:none}
+body.clean #show{display:block}
+@media (min-width:900px){
+ #panel{left:auto;right:16px;bottom:50%;transform:translateY(50%);width:340px;padding:14px}
+ .tray{flex-wrap:wrap;overflow:visible;min-height:150px;align-content:flex-start}
+}
+@media (max-height:520px) and (orientation:landscape){
+ #panel{left:auto;right:8px;transform:none;width:320px}
+ header{right:336px}
+}
+button:hover{background:rgba(255,255,255,.15)}
+#kind .card{display:flex;flex-direction:column;align-items:center;gap:2px;width:68px;padding:6px 2px 5px;font-size:11px}
+#kind canvas{width:36px;height:36px}
+#full{position:fixed;right:10px;top:calc(8px + env(safe-area-inset-top));padding:0;font-size:18px}
+#keys{display:none}
+@media (max-width:599px){#full{display:none}}
+@media (min-width:900px) and (min-height:521px){
+ #kind{display:grid;grid-template-columns:repeat(4,1fr);max-height:min(46vh,380px);overflow-y:auto;min-height:0}
+ #kind[hidden]{display:none}
+ #kind .card{width:auto}
+ #full{left:14px;right:auto}
+ #keys{display:block;position:fixed;left:16px;bottom:12px;font-size:12px;opacity:.55;pointer-events:none}
+ body.clean #keys{display:none}
+}
+#make{background:linear-gradient(90deg,rgba(255,80,190,.45),rgba(157,92,255,.45));font-weight:700}
+dialog{margin:auto;width:min(440px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;background:#10122a;color:inherit;border:1px solid rgba(255,255,255,.18);border-radius:22px;padding:18px}
+dialog::backdrop{background:rgba(2,3,10,.7)}
+dialog h2{font-size:18px;margin-bottom:4px}
+dialog p{font-size:13px;opacity:.75;line-height:1.4}
+dialog label{display:block;font-size:13px;margin-top:12px}
+dialog input[type=text],textarea{display:block;width:100%;margin-top:4px;background:#070818;color:inherit;border:1px solid #343862;border-radius:12px;padding:11px;font:inherit;font-size:16px}
+textarea{resize:vertical;min-height:96px}
+.actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.actions button{flex:1}
+#result[hidden],#share[hidden],#warn[hidden]{display:none}
+#warn{color:#ffd98a;opacity:1;margin-top:8px}
+#letter,#open,#unlock,#mute{display:none}
+dialog input[type=password],dialog input[type=file],#unlock input{display:block;width:100%;margin-top:4px;background:#070818;color:#f3f4ff;border:1px solid #343862;border-radius:12px;padding:11px;font:inherit;font-size:16px}
+body.locked #open{display:none}
+body.card.locked #unlock{display:block;position:fixed;left:50%;bottom:14%;transform:translateX(-50%);width:min(320px,calc(100% - 32px));background:#10122a;border:1px solid rgba(255,255,255,.2);border-radius:18px;padding:14px}
+#unlock button{width:100%;margin-top:8px}
+body.card.opened.music #mute{display:block;position:fixed;right:10px;top:calc(52px + env(safe-area-inset-top));padding:0}
+body.standalone #own{display:none}
+#result p{margin-top:8px}
+body.card #panel,body.card #show,body.card #keys,body.card #info{display:none}
+body.card #open{display:block;position:fixed;left:50%;bottom:22%;transform:translateX(-50%);padding:0 28px;min-height:56px;font-size:17px;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.55)}
+body.card.opened #open{display:none}
+#letter{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom));width:min(520px,calc(100% - 20px));max-height:40vh;overflow:auto;
+ background:#fff8f2;color:#2a1b30;border-radius:18px;padding:18px 20px 12px;box-shadow:0 8px 40px rgba(0,0,0,.5);font-family:Georgia,'Times New Roman',serif;
+ opacity:0;visibility:hidden;transform:translate(-50%,16px);transition:opacity .8s,transform .8s,visibility .8s}
+body.card #letter{display:block}
+body.read #letter{opacity:1;visibility:visible;transform:translate(-50%,0)}
+#toLine,#fromLine{font-size:17px;font-style:italic;overflow-wrap:anywhere}
+#body{font-size:18px;line-height:1.5;margin:10px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+#fromLine{text-align:right}
+#letter .actions button{font:500 13px system-ui,sans-serif;background:#f1e4ee;color:#2a1b30}
+@media (min-width:900px),(orientation:landscape) and (max-height:520px){
+ #letter{left:auto;right:16px;bottom:50%;width:min(380px,42vw);max-height:84vh;transform:translate(0,calc(50% + 16px))}
+ body.read #letter{transform:translate(0,50%)}
+ body.card #open{bottom:12%}
+}
+@media (prefers-reduced-motion:reduce){#letter{transition:none}}
+details{margin-top:10px;font-size:13px}
+summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:3px}
+.chips button{flex:none;min-height:36px}
+#lines{max-height:180px;overflow-y:auto;margin-top:8px;display:flex;flex-direction:column;gap:5px}
+#lines button{white-space:normal;text-align:left;padding:9px 12px;line-height:1.35;flex:none}
+#tabs{grid-template-columns:repeat(5,1fr)!important}
+#tabs button{font-size:13px}
+#bouquet .note{align-self:center;font-size:12px;opacity:.7;white-space:nowrap}
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="Animated glowing flower with butterflies. Tap for sparkles."></canvas>
+<header><h1>THE WHOLE LIFE OF A FLOWER</h1><div id="info" aria-hidden="true"></div></header>
+<nav id="panel" aria-label="Flower controls">
+  <div id="tabs" role="tablist">
+    <button role="tab" data-t="kind" aria-selected="true">Flower</button><button role="tab" data-t="colors">Color</button>
+    <button role="tab" data-t="style">Bloom</button><button role="tab" data-t="scene">Sky</button><button role="tab" data-t="bouquet">Bouquet</button>
+  </div>
+  <div class="tray" id="kind"></div>
+  <div class="tray" id="colors" hidden><input type="color" id="custom" value="#ff50be" aria-label="Custom flower color"></div>
+  <div class="tray" id="style" hidden></div>
+  <div class="tray" id="scene" hidden></div>
+  <div class="tray" id="bouquet" hidden></div>
+  <div class="bar">
+    <button id="play" aria-label="Pause">❚❚</button>
+    <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Flower life timeline">
+    <button id="surprise" aria-label="Surprise me" title="Surprise me">🎲</button>
+    <button id="fly" aria-label="Butterflies" title="Butterflies" aria-pressed="true">🦋</button>
+    <button id="hide" aria-label="Hide controls" title="Hide controls (H)">✕</button>
+  </div>
+  <button id="make">💌 Send as a card</button>
+</nav>
+<dialog id="maker" aria-labelledby="makerTitle">
+  <h2 id="makerTitle">Send this flower</h2>
+  <p id="chosen"></p>
+  <form id="form">
+    <label>To<input type="text" id="to" maxlength="40" autocomplete="off" placeholder="Their name"></label>
+    <label>Message<textarea id="msg" maxlength="400" required placeholder="Write your own, or pick one below"></textarea></label>
+    <details id="ideas">
+      <summary>Need words? Pick a message</summary>
+      <div class="chips" id="moods"></div>
+      <div id="lines"></div>
+      <div class="actions"><button type="button" id="random">Random message</button></div>
+    </details>
+    <label>From<input type="text" id="from" maxlength="40" autocomplete="off" placeholder="Your name"></label>
+    <label>Music, optional (MP3 up to 8 MB)<input type="file" id="music" accept=".mp3,audio/mpeg"></label>
+    <label>Password, optional but recommended<input type="password" id="pass" minlength="8" maxlength="100" autocomplete="new-password" placeholder="At least 8 characters"></label>
+    <div class="actions"><button type="submit">Create card</button><button type="button" id="close">Close</button></div>
+  </form>
+  <div id="result" hidden>
+    <p id="status" role="status"></p>
+    <div id="linkBox">
+      <label>Your link<input type="text" id="link" readonly></label>
+      <div class="actions"><button id="copy">Copy link</button><button id="share">Share</button><button id="preview">Preview</button></div>
+      <p id="warn" hidden>This page is open from your device, so this link only works here. Publish the page (GitHub Pages) and create the link there to send it.</p>
+    </div>
+    <div class="actions"><button id="download">Download card page</button></div>
+    <p id="privacy"></p>
+  </div>
+</dialog>
+<button id="open">💌 Open your flower</button>
+<form id="unlock">
+  <label for="key">This card is locked. Enter the password.</label>
+  <input type="password" id="key" autocomplete="off" required>
+  <button type="submit">Unlock</button>
+  <p id="wrong" role="alert"></p>
+</form>
+<button id="mute" aria-label="Mute music">🔊</button>
+<article id="letter" aria-live="polite">
+  <div id="toLine"></div><div id="body"></div><div id="fromLine"></div>
+  <div class="actions"><button id="again">Watch again</button><button id="own">Make your own</button></div>
+</article>
+<button id="full" aria-label="Full screen" title="Full screen (F)">⛶</button>
+<p id="keys">Space pause · ← → flower · S surprise · H hide · F full screen</p>
+<button id="show">Show controls</button>
+<script>
+"use strict";
+const PRISTINE=document.documentElement.outerHTML; // untouched copy, used to build card pages
+const W=540,H=960,CX=270,ROOT=800,STEM=470,LIFE=29,TAU=Math.PI*2;
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+
+// ---------- cards ----------
+// Nothing is uploaded. A card lives in the link (after #) or inside a downloaded page.
+const toB64=u=>{let s='';for(let i=0;i<u.length;i+=32768)s+=String.fromCharCode(...u.subarray(i,i+32768));return btoa(s)};
+const fromB64=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+const urlSafe=s=>s.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const utf8=s=>new TextEncoder().encode(s);
+async function keyFrom(pass,salt){ // AES-256-GCM key derived from the password
+  const raw=await crypto.subtle.importKey('raw',utf8(pass),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:600000,hash:'SHA-256'},raw,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function encrypt(obj,pass){
+  const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+  const data=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await keyFrom(pass,salt),utf8(JSON.stringify(obj))));
+  const out=new Uint8Array(28+data.length);out.set(salt);out.set(iv,16);out.set(data,28);
+  return toB64(out);
+}
+async function decrypt(text,pass){
+  const b=fromB64(text),key=await keyFrom(pass,b.slice(0,16));
+  const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:b.slice(16,28)},key,b.slice(28));
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+const valid=o=>o&&typeof o.m==='string';
+function readCard(){
+  try{
+    const file=$('embedded');
+    if(file){const o=JSON.parse(file.textContent);return typeof o.e==='string'?{locked:o.e,file:true}:valid(o)?{data:o,file:true}:null}
+    if(location.hash.startsWith('#lock='))return{locked:location.hash.slice(6)};
+    if(location.hash.startsWith('#card=')){
+      const o=JSON.parse(new TextDecoder().decode(fromB64(location.hash.slice(6))));
+      return valid(o)?{data:o}:null;
+    }
+  }catch(e){}
+  return null;
+}
+const CARD=readCard(),BLOOMED=.68;
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const smooth=(x,s,w=.2)=>{const k=clamp((x-s)/w);return k*k*(3-2*k)};
+const ease=x=>1-(1-clamp(x))**3;
+const mix=(a,b,k)=>a.map((v,i)=>v+(b[i]-v)*k);
+const rgb=(c,a=1)=>`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${clamp(a)})`;
+const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const WHITE=[255,255,255],GREY=[120,118,135],TEAL=[60,255,215],GOLD=[255,225,160];
+
+// ---------- colors ----------
+const PRESETS={Pink:'#ff50be',Red:'#ff2e4d',Violet:'#9d5cff',Magenta:'#f21fe0'};
+let target=hex(PRESETS.Pink),pink=target.slice();
+function setColor(h){
+  target=hex(h);$('custom').value=h;
+  document.querySelectorAll('[data-c]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===h));
+  try{if(!CARD)localStorage.setItem('flowerColor',h)}catch(e){}
+}
+for(const [n,h] of Object.entries(PRESETS)){
+  const b=document.createElement('button');b.dataset.c=h;
+  b.innerHTML=`<span class="dot" style="background:${h}"></span>${n}`;
+  b.onclick=()=>setColor(h);$('colors').insertBefore(b,$('custom'));
+}
+$('custom').oninput=e=>setColor(e.target.value);
+let saved=null;try{saved=localStorage.getItem('flowerColor')}catch(e){}
+setColor(/^#[0-9a-f]{6}$/i.test(saved)?saved:PRESETS.Pink);pink=target.slice();
+
+// ---------- fixed geometry ----------
+// rings: [petal count, length, half-width, opening angle, curl]
+const FLOWERS={
+  Dahlia:{shape:'point',core:'stamen',rings:[[7,66,22,.43,.7],[9,92,29,.7,.7],[12,122,34,.98,.7],[15,150,36,1.25,.7]]},
+  Lotus:{shape:'point',core:'pod',rings:[[6,78,30,.22,.1],[8,100,38,.62,.25],[10,124,42,1.08,.35]]},
+  Rose:{shape:'round',core:'none',rings:[[4,56,34,.38,-.8],[5,72,44,.62,-.45],[7,90,54,.95,.15],[8,106,62,1.25,.75]]},
+  Daisy:{shape:'round',core:'disk',rings:[[18,112,13,1.2,.25],[24,140,13,1.45,.3]]},
+  Tulip:{shape:'cup',core:'none',rings:[[3,128,60,.72,-.8],[3,136,66,.82,-.85]]},
+  Sakura:{shape:'notch',core:'stamen',rings:[[5,128,54,1.22,.15]]},
+  Lily:{shape:'point',core:'stamen',rings:[[3,148,40,.72,1.3],[3,158,30,.82,1.55]]},
+  Peony:{shape:'ruffle',core:'stamen',rings:[[6,54,30,.3,-.6],[8,74,38,.55,-.3],[9,94,44,.85,.1],[10,114,50,1.2,.5]]},
+  Poppy:{shape:'ruffle',core:'dark',rings:[[3,108,72,.85,-.2],[3,120,80,1.1,.1]]},
+  Cosmos:{shape:'notch',core:'disk',rings:[[8,138,36,1.3,.1]]},
+  Hibiscus:{shape:'ruffle',core:'column',rings:[[5,134,68,1.0,.6]]},
+  Magnolia:{shape:'round',core:'pod',rings:[[3,104,38,.25,-.3],[4,130,48,.55,0],[4,138,52,.95,.2]]},
+  Mum:{shape:'point',core:'none',rings:[[12,52,8,.25,-1.4],[16,76,9,.55,-1],[20,100,10,.9,-.5],[24,128,11,1.3,.2]]},
+  Sunflower:{shape:'point',core:'seeds',rings:[[17,128,19,1.2,.3],[21,146,18,1.45,.4]]},
+  Anemone:{shape:'round',core:'dark',rings:[[6,104,46,.95,-.1],[7,124,50,1.22,.15]]},
+  'Water Lily':{shape:'point',core:'pod',rings:[[8,80,18,.3,-.2],[10,108,24,.75,-.1],[13,136,27,1.22,-.15],[14,150,24,1.5,-.35]]},
+  Camellia:{shape:'round',core:'stamen',rings:[[5,66,38,.55,-.2],[7,92,46,.95,.1],[8,116,52,1.3,.2]]},
+  Aster:{shape:'point',core:'disk',rings:[[26,108,8,1.05,.2],[34,134,8,1.35,.35],[30,144,7,1.5,.55]]},
+  Zinnia:{shape:'round',core:'disk',rings:[[10,62,17,.55,-.2],[13,86,22,.9,.1],[16,110,24,1.2,.3],[19,134,25,1.45,.4]]},
+  Plumeria:{shape:'round',core:'none',twist:.55,rings:[[5,128,58,1.12,.15]]},
+  Daffodil:{shape:'round',core:'stamen',rings:[[8,66,28,.38,.2],[3,134,52,1.18,.2],[3,140,50,1.34,.2]]},
+  Carnation:{shape:'frill',core:'none',rings:[[7,62,26,.35,-.3],[9,84,32,.65,0],[11,102,36,.95,.2],[13,118,40,1.28,.4]]}
+};
+let kind='Dahlia',style='Gentle',petals=[];
+function buildPetals(){petals=petalsFor(kind)}
+function petalsFor(kind){
+  let k=11;const rand=()=>(k=(k*16807)%2147483647)/2147483647;
+  const petals=[];
+  const rings=FLOWERS[kind].rings,total=rings.reduce((a,x)=>a+x[0],0);let n0=0;
+  rings.forEach(([n,len,wid,th,curl],ring)=>{
+    for(let i=0;i<n;i++)petals.push({ring,len,wid,th,curl,order:n0++/total,around:i/n,
+      phi:TAU*i/n+(ring%2)*Math.PI/n+ring*.2,fall:.76+rand()*.15,spin:rand()*2.4-1.2,ph:rand()*6,
+      sp:Array.from({length:Math.min(16,Math.ceil(240/total))},()=>[.25+rand()*.75,rand()*2-1,rand()*6])});
+  });
+  return petals;
+}
+// extra flowers around the middle one
+const MAX_EXTRA=4,SLOTS=[{dx:-138,s:.57,front:true},{dx:152,s:.53,front:true},{dx:-174,s:.93},{dx:178,s:.87}];
+let extras=[];
+const makeExtra=(k,c)=>({k,c,rgb:hex(c),petals:petalsFor(k)});
+function drawExtras(front,life){
+  const keep=[kind,petals,pink],baseT=t;
+  extras.forEach((x,i)=>{
+    const slot=SLOTS[i];if(!!slot.front!==front)return;
+    kind=x.k;petals=x.petals;pink=x.rgb;t=baseT+(i+1)*1.9;
+    const d=smooth(life,.75),h=stemHeight(life),top=stemPoint(h,t,d);
+    const opened=petals.reduce((a,p)=>a+openness(p,life,t),0)/petals.length;
+    ctx.save();
+    ctx.translate(CX+slot.dx,groundY(CX+slot.dx));ctx.scale(slot.s,slot.s);ctx.translate(-CX,-ROOT-3);
+    ctx.globalCompositeOperation='lighter';
+    glow(top[0],top[1]-30,200,200,pink,.22*smooth(life,.42,.2)*(1-d));
+    drawStem(h,t,d);drawLeaves(h,t,d);drawBud(life,t,top,d,opened);drawBloom(life,t,top,d);
+    ctx.restore();ctx.globalCompositeOperation='lighter';
+    [kind,petals,pink]=keep;t=baseT;
+  });
+}
+// how far a petal has opened (0..1) for each kind of bloom
+function openness(p,life,t){
+  if(style==='Spiral')return smooth(life,.41+p.order*.17,.09);
+  if(style==='Burst'){
+    const k=clamp((life-.47)/.09)-1;
+    return .12*smooth(life,.4,.06)*(life<.47)+(life<.47?0:Math.max(.12,1+2.7*k*k*k+1.7*k*k));
+  }
+  const o=smooth(life,.42+p.ring*.035);
+  if(style==='Breathing')return o*(1+.16*Math.sin(t*2.2-p.ring*.8)*smooth(life,.58,.06));
+  if(style==='Wave')return o*(1+.2*Math.sin(t*3-p.around*TAU)*smooth(life,.58,.06));
+  return o;
+}
+const dust=Array.from({length:220},()=>({x:rnd()*W,y:rnd()*H,s:4+rnd()*14,p:rnd()*6,r:.5+rnd()*1.1}));
+const pollen=Array.from({length:130},()=>({p:rnd(),a:rnd()*TAU,s:40+rnd()*150}));
+const LEAVES=[[.22,-1,100,.5],[.42,1,118,.58],[.6,-1,86,.7]];
+
+const groundY=x=>ROOT+3+40*(1-Math.exp(-(((x-CX)/260)**2)));
+const stemPoint=(y,t,d)=>{const f=y/STEM;return[CX+14*Math.sin(y/80+t)+d*150*f*f,ROOT-y*(1-.12*d*f)]};
+
+function glow(x,y,rx,ry,col,a){
+  if(a<=.003)return;
+  ctx.save();ctx.translate(x,y);ctx.scale(rx,ry);
+  const g=ctx.createRadialGradient(0,0,0,0,0,1);
+  g.addColorStop(0,rgb(col,a));g.addColorStop(.35,rgb(col,a*.4));g.addColorStop(1,rgb(col,0));
+  ctx.fillStyle=g;ctx.fillRect(-1,-1,2,2);ctx.restore();
+}
+function dot(x,y,r,col,a){ctx.fillStyle=rgb(col,a);ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill()}
+function path(pts,close){
+  ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));
+  if(close)ctx.closePath();
+}
+
+// ---------- stem, leaves, seed and bud ----------
+const stemHeight=life=>STEM*(.55*smooth(life,.04,.36)+.45*ease((life-.04)/.34));
+function blade(x0,y0,angle,len,wide,bend,col,a,veins){
+  // a leaf shape starting at (x0,y0); angle 0 points up
+  if(len<2||a<=.01)return;
+  ctx.save();ctx.translate(x0,y0);ctx.rotate(angle);
+  const g=ctx.createLinearGradient(0,0,0,-len);
+  g.addColorStop(0,rgb(mix(col,[3,22,30],veins?.86:.55),.96*a));g.addColorStop(1,rgb(mix(col,[3,22,30],veins?.58:.12),.94*a));
+  const shape=new Path2D();
+  shape.moveTo(0,0);
+  shape.bezierCurveTo(-wide,-len*.28,-wide*.85+bend*.5,-len*.72,bend,-len);
+  shape.bezierCurveTo(wide*.85+bend*.5,-len*.72,wide,-len*.28,0,0);
+  ctx.globalCompositeOperation='source-over';ctx.fillStyle=g;ctx.fill(shape);ctx.globalCompositeOperation='lighter';
+  ctx.lineWidth=1.3;ctx.strokeStyle=rgb(col,.7*a);ctx.stroke(shape);
+  ctx.lineWidth=.9;ctx.strokeStyle=rgb(col,.45*a);
+  ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(0,-len*.55,bend*.8,-len*.9);
+  for(let i=1;i<=veins;i++){
+    const u=i/(veins+1.6),y=-len*u,x=bend*.8*u*u,w=wide*.46*Math.sin(Math.PI*u**.8);
+    for(const s of[-1,1]){ctx.moveTo(x,y);ctx.quadraticCurveTo(x+s*w*.5,y-len*.05,x+s*w,y-len*.13)}
+  }
+  ctx.stroke();ctx.restore();
+}
+function drawStem(h,t,d){
+  if(h<1)return;
+  const col=mix(TEAL,GREY,d*.85),n=60,left=[],right=[],mid=[];
+  const thick=1.6+3.4*smooth(h,0,STEM);
+  for(let i=0;i<=n;i++){
+    const u=i/n,p=stemPoint(h*u,t,d),w=thick*(1-.55*u)+.5;
+    left.push([p[0]-w,p[1]]);right.unshift([p[0]+w,p[1]]);mid.push(p);
+  }
+  ctx.lineCap=ctx.lineJoin='round';
+  for(const [w,a] of[[18,.05],[10,.1]]){ctx.lineWidth=w;ctx.strokeStyle=rgb(col,a);path(mid);ctx.stroke()}
+  ctx.fillStyle=rgb(mix(col,[4,60,60],.35),.9);path(left.concat(right),true);ctx.fill();
+  ctx.lineWidth=1.2;ctx.strokeStyle=rgb(WHITE,.6*(1-d));path(mid);ctx.stroke();
+}
+function drawLeaves(h,t,d){
+  const col=mix(TEAL,GREY,d*.85);
+  for(const [frac,side,len,ang] of LEAVES){
+    const ha=frac*STEM,g=ease((h-ha)/150);if(g<=0)continue;
+    const [x,y]=stemPoint(ha,t,d);
+    // starts folded against the stem, then opens outwards
+    const open=smooth(g,.15,.8),a=side*(.15+(1.22-ang*.35)*open+.9*d)+.035*Math.sin(t*1.4+ha);
+    blade(x,y,a,len*1.08*g,len*(.08+.24*open)*g,side*len*.18*open,col,1,6);
+  }
+}
+function drawSeed(life,t,h){
+  const col=mix(GOLD,TEAL,smooth(life,.05,.08));
+  const fall=clamp(life/.028);
+  if(life<.07){
+    const y=ROOT-210*(1-fall*fall),a=1-smooth(life,.045,.025);
+    glow(CX+Math.sin(0+t)*0,y,22,22,GOLD,.8*a);
+    ctx.fillStyle=rgb(GOLD,a);ctx.beginPath();ctx.ellipse(CX,y,4,6,.3,0,TAU);ctx.fill();
+  }
+  const k=(life-.028)/.07;
+  if(k>0&&k<1)for(let i=0;i<2;i++){
+    const q=clamp(k*1.4-i*.35);
+    ctx.strokeStyle=rgb(col,.8*(1-q));ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.ellipse(CX,ROOT+3,6+90*ease(q),2+14*ease(q),0,0,TAU);ctx.stroke();
+  }
+  // two first little leaves
+  const g=smooth(life,.045,.07)*(1-smooth(life,.2,.08));
+  if(g>0){
+    const [x,y]=stemPoint(Math.min(h,44),t,0);
+    for(const s of[-1,1])blade(x,y,s*(.2+.95*smooth(life,.07,.07)),30*g,10*g,s*5,TEAL,g,2);
+  }
+  // fireflies of energy spiralling up around the growing tip
+  const grow=smooth(life,.04,.04)*(1-smooth(life,.34,.08));
+  if(grow>0)for(let i=0;i<26;i++){
+    const u=(t*.45+i/26)%1,a=u*9+i%2*Math.PI+t,r=(28-18*u)*(.4+.6*grow);
+    const p=stemPoint(Math.max(0,h-90*(1-u)),t,0);
+    const alpha=grow*Math.sin(Math.PI*u)*(.55+.45*Math.cos(a));
+    dot(p[0]+Math.cos(a)*r,p[1]+Math.sin(a)*r*.25,1.7,mix(TEAL,WHITE,.5),alpha);
+  }
+  const [x,y]=stemPoint(h,t,0),tip=smooth(life,.04,.03)*(1-smooth(life,.24,.08));
+  glow(x,y,20,20,TEAL,.8*tip);dot(x,y,2.5,WHITE,tip);
+}
+function drawBud(life,t,top,d,opened){
+  const size=smooth(life,.22,.2),col=mix(TEAL,GREY,d*.85);
+  if(size<=0)return;
+  const split=smooth(life,.4,.14),a=1-clamp(opened*3);
+  if(a>.01){
+    // closed bud, swelling and slightly breathing
+    const bh=(14+52*size)*(1+.02*Math.sin(t*3)),bw=bh*.34;
+    glow(top[0],top[1]-bh*.5,bh,bh,pink,.25*a*size);
+    for(const [lean,w,k] of[[-.1,1,.8],[.1,1,.8],[0,1.15,1]])
+      blade(top[0],top[1],lean,bh*k,bw*w,-lean*bw,pink,a*smooth(size,.15,.4),0);
+  }
+  // sepals wrap the bud, then fold back as it opens
+  for(const [dir,back] of[[-1,1],[1,1],[-.5,.6],[.5,.6],[0,0]]){
+    const ang=dir*(.22+1.9*split+.5*d),len=(13+36*size)*(1-.25*split);
+    if(dir===0&&split>.05)continue;
+    blade(top[0]+dir*3,top[1]+3,ang,len,len*.2,-dir*len*.3*(1-split),col,1-.25*back*split,1);
+  }
+}
+
+// ---------- flower head ----------
+function drawBloom(life,t,top,d){
+  const base=mix(pink,GREY,d),list=[];
+  for(const p of petals){
+    const o=openness(p,life,t),open=o*1.25;if(o<=.01)continue;
+    const shape=FLOWERS[kind].shape;
+    const L=p.len*(.25+.75*Math.sqrt(o)),th=o*p.th+d*(.5+.1*p.ring);
+    let c=.2+o*(p.curl-.2)+d*1.1;if(Math.abs(c)<.02)c=.02;
+    const a=t*.25,tau=Math.max(0,(life-p.fall)*LIFE),tl=d*1.15;
+    const project=(u,v)=>{
+      let wide;
+      if(shape==='point')wide=Math.sin(Math.PI*u**.8)**.8;
+      else wide=Math.sqrt(Math.max(0,1-(2*u**(shape==='cup'?1.1:1.35)-1)**2))*(shape==='cup'?1-.25*u*u:1);
+      if(shape==='ruffle')wide*=1+.12*Math.sin(u*19+p.ph)*u;
+      if(shape==='frill'){wide=Math.min(1,u*1.5)**.8*(u>.9?1-(u-.9)*5:1);if(u>.65)u+=.05*Math.sin(v*14+p.ph)*Math.abs(v);}
+      if(shape==='notch'){wide=Math.max(wide,.55*smooth(u,.7,.3));u*=1-.32*(1-Math.abs(v))**2*u**4;}
+      const r=L*(Math.cos(th)-Math.cos(th+c*u))/c,z=L*(Math.sin(th+c*u)-Math.sin(th))/c;
+      const lat=v*p.wid*(L/p.len)*wide+(FLOWERS[kind].twist||0)*p.wid*u*u*(L/p.len);
+      const X=r*Math.cos(p.phi)-lat*Math.sin(p.phi),Z=r*Math.sin(p.phi)+lat*Math.cos(p.phi);
+      const xr=X*Math.cos(a)+Z*Math.sin(a),zr=-X*Math.sin(a)+Z*Math.cos(a);
+      const y=-(z*Math.cos(.68)-zr*Math.sin(.68))+Math.abs(v)*-3*u;
+      return[top[0]+xr*Math.cos(tl)-y*Math.sin(tl),top[1]+xr*Math.sin(tl)+y*Math.cos(tl),zr];
+    };
+    let left=[],right=[],mid=[];
+    for(let i=0;i<=14;i++){const u=i/14;left.push(project(u,1));right.push(project(u,-1));mid.push(project(u,0))}
+    const sparks=p.sp.map(([u,v,ph])=>[...project(u,v*.9),ph]);
+    if(tau>0){ // petal lets go and falls
+      const m=mid[7].slice(),an=p.spin*Math.min(tau,2.2),k=Math.min(tau,3);
+      const move=q=>{
+        const dx=q[0]-m[0],dy=q[1]-m[1];
+        const x=m[0]+dx*Math.cos(an)-dy*Math.sin(an)+Math.sin(tau*1.7+p.ph)*18*k;
+        const y=m[1]+dx*Math.sin(an)+dy*Math.cos(an)+58*d*tau*tau;
+        q[0]=x;q[1]=Math.min(y,groundY(x)-2);
+      };
+      [left,right,mid,sparks].forEach(s=>s.forEach(move));
+    }
+    list.push({p,left,right,mid,sparks,z:mid[10][2],vis:clamp(open*4)});
+  }
+  list.sort((a,b)=>a.z-b.z); // back petals first
+  for(const {p,left,right,mid,sparks,z,vis} of list){
+    const shade=.7+.3*clamp(z/90,-1,1),inner=Math.max(0,1-p.ring/3);
+    let col=mix(base,WHITE,inner*(kind==='Rose'?.05:.2)*(1-d));
+    if(kind==='Daisy')col=mix(col,WHITE,.18*(1-d));
+    const a=mid[0],b=mid[14],g=ctx.createLinearGradient(a[0],a[1],b[0]+.1,b[1]+.1);
+    g.addColorStop(0,rgb(mix(col,WHITE,.35*(1-d)),.3*vis));
+    g.addColorStop(.35,rgb(col,.2*vis*shade));
+    g.addColorStop(1,rgb(col,.36*vis*shade));
+    const outline=left.concat(right.slice().reverse());
+    // a dark pass first keeps overlapping petals distinct instead of washing out
+    ctx.globalCompositeOperation='source-over';
+    ctx.fillStyle=rgb(mix(col,[8,4,16],.65),.62*vis);path(outline,true);ctx.fill();
+    ctx.globalCompositeOperation='lighter';
+    ctx.fillStyle=g;ctx.fill();
+    ctx.lineWidth=4;ctx.strokeStyle=rgb(col,.05*vis);ctx.stroke();
+    ctx.lineWidth=1.1;ctx.strokeStyle=rgb(mix(col,WHITE,.35),.65*vis*shade);ctx.stroke();
+    ctx.lineWidth=.7;ctx.strokeStyle=rgb(mix(col,WHITE,.4),.3*vis);
+    for(const s of[-.45,0,.45]){
+      path([mid[1],mid.map((m,i)=>[m[0]+(left[i][0]-m[0])*s,m[1]+(left[i][1]-m[1])*s])[7],mid[12]]);ctx.stroke();
+    }
+    for(const [x,y,,ph] of sparks)dot(x,y,.8,mix(col,WHITE,.6),vis*(.35+.35*Math.sin(t*3+ph)));
+  }
+  // centre of the flower
+  const vis=smooth(life,.5,.12)*(1-d),core=FLOWERS[kind].core;
+  if(vis<=.01||core==='none')return;
+  ctx.globalCompositeOperation='source-over';
+  if(core==='dark'||core==='seeds'){
+    const big=core==='seeds',R=big?52:26,y=top[1]-(big?24:30),n=big?210:70;
+    ctx.fillStyle=rgb(big?[58,28,8]:[28,10,30],.95*vis);
+    ctx.beginPath();ctx.ellipse(top[0],y,R,R*.55,0,0,TAU);ctx.fill();
+    for(let i=0;i<n;i++){
+      const a=i*2.39996+t*.25,q=Math.sqrt(i/n)*(R+(big?0:8));
+      dot(top[0]+Math.cos(a)*q,y+Math.sin(a)*q*.55,big?1.5:1.2,big?(i%4?[190,110,30]:GOLD):[255,200,120],vis*(big?.9:.7));
+    }
+  }
+  if(core==='column'){
+    ctx.globalCompositeOperation='lighter';
+    const x=top[0]+Math.sin(t*.7)*8,y=top[1]-112;
+    ctx.strokeStyle=rgb(mix(pink,WHITE,.5),vis);ctx.lineWidth=4;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(top[0],top[1]-8);ctx.quadraticCurveTo(top[0]-6,y+40,x,y);ctx.stroke();
+    for(let i=0;i<34;i++){
+      const a=i*2.39996,q=3+(i%7)*2,py=y+8+(i%11)*3;
+      dot(x+Math.cos(a)*q,py+Math.sin(a)*q*.5,1.6,GOLD,vis);
+    }
+    glow(x,y,20,20,GOLD,.5*vis);
+    return;
+  }
+  if(core==='disk'||core==='pod'){
+    const R=core==='disk'?34:24,y=top[1]-(core==='disk'?22:34);
+    ctx.fillStyle=rgb(core==='disk'?[120,70,10]:[110,120,40],.92*vis);
+    ctx.beginPath();ctx.ellipse(top[0],y,R,R*.5,0,0,TAU);ctx.fill();
+    const n=core==='disk'?120:18;
+    for(let i=0;i<n;i++){
+      const a=i*2.39996+t*.25,q=Math.sqrt(i/n)*(R-3);
+      dot(top[0]+Math.cos(a)*q,y+Math.sin(a)*q*.5,core==='disk'?1.6:2.2,i%3?GOLD:[255,170,50],vis);
+    }
+  }
+  ctx.globalCompositeOperation='lighter';
+  if(core==='disk'||core==='dark'||core==='seeds')return;
+  const n=kind==='Dahlia'?26:kind==='Lily'?7:18,reach=kind==='Lily'?95:kind==='Sakura'?62:kind==='Lotus'?44:26;
+  for(let i=0;i<n;i++){
+    const a=i*2.4+t*.25,q=reach*(.4+.6*((i*7)%n)/n),x=top[0]+Math.cos(a)*q,
+      y=top[1]-(kind==='Dahlia'?22:48)-(i%5)*4+Math.sin(a)*q*.45;
+    ctx.strokeStyle=rgb(GOLD,.5*vis);ctx.lineWidth=.8;
+    ctx.beginPath();ctx.moveTo(top[0],top[1]-4);ctx.quadraticCurveTo(top[0],y,x,y);ctx.stroke();
+    glow(x,y,6,6,GOLD,.4*vis);dot(x,y,kind==='Lily'?2.6:1.6,[255,235,180],vis);
+  }
+}
+
+// ---------- butterflies (original shapes) ----------
+const flies=[0,1,2,3,4].map(i=>({i,x:i%2?W+40:-40,y:200+i*110,vx:0,vy:0,a:0,s:13+i%3*4,ph:i*1.7}));
+function moveFlies(dt,t,hc){
+  for(const f of flies){
+    const orbit=t*(.28+f.i*.05)+f.ph*2;
+    const tx=hc[0]+Math.cos(orbit)*(90+f.i*28)+Math.sin(t*1.3+f.ph)*30;
+    const ty=hc[1]+Math.sin(orbit*1.6)*(70+f.i*18)+(f.i-2)*30;
+    f.vx+=((tx-f.x)*1.4-f.vx*1.5)*dt;f.vy+=((ty-f.y)*1.4-f.vy*1.5)*dt;
+    f.x+=f.vx*dt;f.y+=f.vy*dt;
+    f.a+=(clamp(f.vx/160,-.6,.6)-f.a)*Math.min(1,dt*4);
+  }
+}
+function trails(){
+  for(const f of flies)if(Math.random()<.25)
+    sparks.push({x:f.x,y:f.y+6,vx:Math.random()*16-8,vy:Math.random()*10,born:t,life:.9,r:1.4,col:mix(pink,WHITE,.5)});
+}
+function drawFlies(t,alpha){
+  for(const f of flies){
+    const col=mix(f.i%2?pink:TEAL,f.i%3?WHITE:GOLD,.25);
+    const flap=.18+.82*Math.abs(Math.sin(t*9+f.ph));
+    ctx.save();ctx.globalCompositeOperation='source-over';ctx.translate(f.x,f.y+Math.sin(t*9+f.ph)*3);ctx.rotate(f.a);
+    ctx.globalAlpha=alpha;glow(0,0,f.s*2.6,f.s*2.6,col,.22);
+    for(const side of[-1,1]){
+      ctx.save();ctx.scale(side*flap*f.s/16,f.s/16);
+      const g=ctx.createRadialGradient(0,0,1,0,0,26);
+      g.addColorStop(0,rgb(mix(col,[10,6,24],.7),.95));g.addColorStop(.55,rgb(col,.8));g.addColorStop(1,rgb(mix(col,WHITE,.3),.7));
+      ctx.fillStyle=g;ctx.strokeStyle=rgb(col,.95);ctx.lineWidth=1.2;
+      ctx.beginPath();ctx.moveTo(1,-2);ctx.bezierCurveTo(8,-24,30,-23,24,-8);ctx.bezierCurveTo(21,0,10,1,1,0);ctx.fill();ctx.stroke();
+      ctx.beginPath();ctx.moveTo(1,1);ctx.bezierCurveTo(14,0,23,9,15,17);ctx.bezierCurveTo(9,20,3,12,1,3);ctx.fill();ctx.stroke();
+      ctx.lineWidth=.6;ctx.beginPath();
+      for(const [x,y] of[[22,-14],[20,-5],[14,13]]){ctx.moveTo(1,0);ctx.quadraticCurveTo(x*.5,y*.3,x,y)}
+      ctx.stroke();dot(18,-12,1.6,WHITE,.9);ctx.restore();
+    }
+    ctx.strokeStyle=rgb(WHITE,.9);ctx.lineCap='round';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(0,-f.s*.35);ctx.lineTo(0,f.s*.55);ctx.stroke();
+    ctx.lineWidth=.7;ctx.beginPath();
+    for(const s of[-1,1]){ctx.moveTo(0,-f.s*.35);ctx.quadraticCurveTo(s*2,-f.s*.8,s*f.s*.4,-f.s*.9)}
+    ctx.stroke();ctx.restore();
+  }
+}
+
+// ---------- backgrounds ----------
+const SCENES={
+  'Aurora':{sky:['#02030c','#08142a','#0a2430'],hills:['#0b1c2b','#07131f'],ground:'#050d14',stars:150,aurora:true},
+  'Moonlit':{sky:['#030616','#0d1740','#28386a'],hills:['#172248','#0c1430'],ground:'#070c1e',stars:120,moon:true,clouds:'#5668a8'},
+  'Galaxy':{sky:['#04010c','#12072a','#1c0c34'],hills:['#140a28','#0a0518'],ground:'#06030f',stars:380,nebula:true},
+  'Twilight':{sky:['#0c0a2a','#301643','#6a2c4a'],hills:['#2c1538','#170b24'],ground:'#0c0614',stars:60,sun:true,clouds:'#c0607a'}
+};
+let scene='Aurora',backdrop=null;
+const V={x0:0,x1:W,y0:0,y1:H,ox:0,oy:0};
+const view=c=>c.setTransform(scale,0,0,scale,V.ox,V.oy);
+const spread=x=>V.x0+x/W*(V.x1-V.x0);
+const stars=Array.from({length:380},()=>({x:rnd()*W,y:rnd()**1.4*640,r:.35+rnd()**3*1.5,p:rnd()*6}));
+const GRASS=[ // back to front: count, height, base offset, width, colour near, colour far
+  {n:230,h:30,d:[-3,6],w:2.2,near:[34,120,112],far:[18,50,66]},
+  {n:200,h:42,d:[8,24],w:2.8,near:[42,160,138],far:[14,44,56]},
+  {n:150,h:50,d:[24,66],w:3.6,near:[24,98,92],far:[6,22,32]}
+].map(l=>({...l,blades:Array.from({length:l.n},(_,i)=>({x:(i+rnd())/l.n,h:l.h*(.35+rnd()**1.6*.9),
+  lean:rnd()*18-9,p:rnd()*.8,d:l.d[0]+rnd()*(l.d[1]-l.d[0]),w:l.w*(.6+rnd()*.7)}))}));
+const blooms=Array.from({length:16},()=>({x:rnd(),d:8+rnd()*44,h:10+rnd()*24,p:rnd()*6,r:1.8+rnd()*1.8}));
+const touch={x:-999,y:-999};
+const flies2=Array.from({length:28},()=>({x:rnd()*W,y:560+rnd()*300,p:rnd()*6,s:.2+rnd()*.5}));
+function paintBackdrop(){ // everything that does not move, painted once
+  const sc=SCENES[scene];backdrop=document.createElement('canvas');backdrop.width=cv.width;backdrop.height=cv.height;
+  const main=ctx.canvas,b=backdrop.getContext('2d');
+  view(b);
+  const sky=b.createLinearGradient(0,0,0,ROOT);
+  sc.sky.forEach((c,i)=>sky.addColorStop(i/2,c));b.fillStyle=sky;b.fillRect(V.x0,V.y0,V.x1-V.x0,V.y1-V.y0);
+  const blob=(x,y,rx,ry,col,a)=>{
+    b.save();b.translate(x,y);b.scale(rx,ry);
+    const g=b.createRadialGradient(0,0,0,0,0,1);g.addColorStop(0,rgb(col,a));g.addColorStop(1,rgb(col,0));
+    b.fillStyle=g;b.fillRect(-1,-1,2,2);b.restore();
+  };
+  let k=29;const rand=()=>(k=(k*16807)%2147483647)/2147483647;
+  if(sc.nebula){
+    const cols=[[150,60,220],[50,90,220],[220,60,150],[40,170,190]];
+    for(let i=0;i<90;i++){
+      const u=rand();
+      blob(spread(u*W)+rand()*80-40,520-u*430+rand()*130-65,30+rand()*90,20+rand()*60,cols[i%4],.09);
+    }
+    for(let i=0;i<900;i++){const u=rand();
+      b.fillStyle=rgb([220,215,255],rand()*.6);b.fillRect(spread(u*W)+(rand()-rand())*60,520-u*430+(rand()-rand())*90,1,1);}
+  }
+  if(sc.moon){
+    blob(430,160,170,170,[170,190,255],.2);
+    b.fillStyle='#b9c2e0';b.beginPath();b.arc(430,160,44,0,TAU);b.fill();
+    for(const [x,y,q] of[[415,148,9],[444,172,12],[438,140,5],[410,176,6]])blob(x,y,q,q,[130,145,190],.55);
+  }
+  if(sc.sun){blob(CX,690,420,260,[255,130,90],.28);blob(110,640,200,120,[255,190,110],.2)}
+  if(sc.clouds)for(let i=0;i<70;i++){
+    const band=i%3;
+    blob(spread(rand()*W),[250,420,540][band]+rand()*30,30+rand()*80,5+rand()*12,hex(sc.clouds),.09);
+  }
+  const hill=(base,amp,freq,ph,col)=>{
+    b.fillStyle=col;b.beginPath();b.moveTo(V.x0,V.y1);
+    for(let x=V.x0;x<=V.x1+4;x+=4)b.lineTo(x,base-amp*(Math.sin(x*freq+ph)*.65+Math.sin(x*freq*2.7+ph*2)*.35));
+    b.lineTo(V.x1,V.y1);b.fill();
+  };
+  hill(722,38,.011,1.2,sc.hills[0]);blob(CX,752,430,55,hex(sc.sky[2]),.4);
+  hill(764,26,.017,4,sc.hills[1]);
+  b.fillStyle=sc.ground;b.beginPath();b.moveTo(V.x0,V.y1);
+  for(let x=V.x0;x<=V.x1+5;x+=5)b.lineTo(x,groundY(x));
+  b.lineTo(V.x1,V.y1);b.fill();
+}
+function drawBackground(){
+  const sc=SCENES[scene];
+  ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(backdrop,0,0);view(ctx);
+  ctx.globalCompositeOperation='lighter';
+  for(let i=0;i<sc.stars;i++){
+    const s=stars[i];dot(spread(s.x),s.y,s.r,[215,225,255],.35+.35*Math.sin(t*1.6+s.p));
+  }
+  if(sc.aurora)for(const [col,y0,amp,ph] of[[[40,255,170],250,55,0],[[60,150,255],330,70,2],[[170,80,255],200,40,4]]){
+    for(let x=V.x0;x<=V.x1;x+=7){
+      const y=y0+Math.sin(x*.012+t*.25+ph)*amp+Math.sin(x*.031-t*.4+ph)*18;
+      const a=.12*(.55+.45*Math.sin(x*.022+t*.9+ph*3));
+      const g=ctx.createLinearGradient(0,y-130,0,y+25);
+      g.addColorStop(0,rgb(col,0));g.addColorStop(.85,rgb(col,a));g.addColorStop(1,rgb(col,0));
+      ctx.fillStyle=g;ctx.fillRect(x,y-130,7,155);
+    }
+  }
+  const k=(t%7)/.9; // shooting star every few seconds
+  if(k<1&&!sc.sun){
+    const n=Math.floor(t/7),x=80+(n*137)%300+k*190,y=90+(n*89)%180+k*90;
+    const g=ctx.createLinearGradient(x-70,y-33,x,y);
+    g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(1,rgb(WHITE,Math.sin(Math.PI*k)));
+    ctx.strokeStyle=g;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(x-70,y-33);ctx.lineTo(x,y);ctx.stroke();
+  }
+  ctx.globalCompositeOperation='source-over';
+}
+function drawGrass(layer){
+  const l=GRASS[layer],wide=V.x1-V.x0,count=Math.min(1,wide/760+.25);
+  const tones=Array.from({length:7},()=>new Path2D()),tips=[];
+  l.blades.forEach((g,i)=>{
+    if(count<1&&(i*.618)%1>count)return;
+    const x=V.x0+g.x*wide,y=groundY(x)+g.d;
+    let sway=g.lean+Math.sin(t*1.5-x*.018+g.p)*6+Math.sin(t*.55-x*.006)*4;
+    const near=Math.hypot(x-touch.x,y-g.h*.5-touch.y); // blades bend away from the pointer
+    if(near<70)sway+=(x<touch.x?-1:1)*(70-near)*.4;
+    const tx=x+sway,ty=y-g.h+Math.abs(sway)*.18,k=Math.abs(x-CX);
+    const path=tones[Math.round(clamp(k/290+((i*.377)%1-.5)*.4)*6)];
+    path.moveTo(x-g.w,y);path.quadraticCurveTo(x-g.w*.5+sway*.15,y-g.h*.65,tx,ty);
+    path.quadraticCurveTo(x+g.w*.5+sway*.35,y-g.h*.55,x+g.w,y);path.lineTo(x,y+g.h*.4);path.closePath();
+    if(i%9===0&&layer<2)tips.push([tx,ty,k]);
+  });
+  ctx.globalCompositeOperation='source-over';
+  tones.forEach((path,i)=>{ctx.fillStyle=rgb(mix(l.near,l.far,i/6),.96);ctx.fill(path)});
+  ctx.globalCompositeOperation='lighter';
+  for(const [x,y,k] of tips)dot(x,y,1.1,[150,255,220],.85*clamp(1-k/340)+.12);
+}
+function drawFront(){drawGrass(2);ctx.globalCompositeOperation='lighter'}
+function drawMeadow(){
+  drawGrass(0);drawGrass(1);
+  ctx.globalCompositeOperation='lighter';
+  for(const f of blooms){ // tiny meadow flowers
+    const x=spread(f.x*W),y=groundY(x)+f.d,sway=Math.sin(t*1.5-x*.018+f.p)*3,hx=x+sway,hy=y-f.h;
+    if(Math.abs(x-CX)<28)continue;
+    ctx.strokeStyle='rgba(80,200,170,.45)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x,y-f.h*.5,hx,hy);ctx.stroke();
+    const col=mix(pink,WHITE,.3);
+    for(let i=0;i<5;i++)dot(hx+Math.cos(i*TAU/5+f.p)*f.r,hy+Math.sin(i*TAU/5+f.p)*f.r*.7,f.r*.65,col,.75);
+    dot(hx,hy,f.r*.5,GOLD,1);
+  }
+  ctx.globalCompositeOperation='lighter';
+  for(const f of flies2){
+    const x=f.x+Math.sin(t*f.s+f.p)*35,y=f.y+Math.cos(t*f.s*1.4+f.p)*22,a=Math.max(0,Math.sin(t*1.7+f.p*3));
+    glow(x,y,8,8,[210,255,130],.45*a);dot(x,y,1.2,[240,255,190],a);
+  }
+}
+
+// ---------- frame ----------
+const bloomLayers=[3,8,20].map(k=>({k,c:document.createElement('canvas')}));
+const sparks=[];
+let low=false,slow=0; // low = lighter effects for slower devices
+let showFlies=true,life=0,t=0,paused=false,scale=0;
+
+function draw(){
+  const d=smooth(life,.75),fade=(1-smooth(life,.9,.09))*smooth(life,0,.015);
+  const h=stemHeight(life),top=stemPoint(h,t,d);
+  const hc=[top[0],top[1]-40*(1-d)],bl=smooth(life,.42,.25)*(1-d*.8);
+  view(ctx);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
+  drawBackground();
+  ctx.globalCompositeOperation='lighter';
+  glow(CX,ROOT+8,310,80,TEAL,(.1+.4*h/STEM)*fade*(1-d*.6));
+  glow(CX,ROOT-h/2,170,380,TEAL,.14*(h/STEM)*(1-d)*fade);
+  glow(hc[0],hc[1],380,380,pink,(.1*smooth(life,.05,.37)+.3*bl)*fade);
+  drawMeadow();
+  for(const p of dust){
+    const y=((p.y-t*p.s)%H+H)%H;
+    dot(spread(p.x)+Math.sin(t*.4+p.p)*12,y,p.r,[150,180,255],.25+.2*Math.sin(t*1.3+p.p*3));
+  }
+
+  ctx.globalAlpha=fade;
+  // light rays and ripples
+  ctx.save();ctx.translate(hc[0],hc[1]);ctx.rotate(t*.05);
+  const ray=ctx.createRadialGradient(0,0,20,0,0,330);
+  ray.addColorStop(0,rgb(mix(pink,WHITE,.3),.08*bl));ray.addColorStop(1,rgb(pink,0));ctx.fillStyle=ray;
+  for(let i=0;i<14;i++){
+    const a=TAU*i/14,w=.05+.04*Math.sin(t*.9+i*2);
+    ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,330,a-w,a+w);ctx.fill();
+  }
+  ctx.restore();
+  for(let i=0;i<2;i++){
+    const k=(t*.16+i/2)%1;
+    ctx.strokeStyle=rgb(TEAL,.22*(1-k)*(h/STEM)*(1-d));ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.ellipse(CX,ROOT+6,20+190*k,4+26*k,0,0,TAU);ctx.stroke();
+  }
+  drawExtras(false,life);
+  drawStem(h,t,d);drawLeaves(h,t,d);drawSeed(life,t,h);
+  const opened=petals.reduce((a,p)=>a+openness(p,life,t),0)/petals.length;
+
+  drawBud(life,t,top,d,opened);
+  ctx.globalCompositeOperation='lighter';
+
+  // orbit rings
+  const rv=smooth(life,.5,.08)*(1-smooth(life,.7,.08));
+  if(rv>0)for(const [R,sp,tilt] of[[190,.45,.18]])for(let i=0;i<220;i++){
+    const a=TAU*i/220+t*sp,ex=R*Math.cos(a),ey=R*.28*Math.sin(a);
+    dot(hc[0]+ex*Math.cos(tilt)-ey*Math.sin(tilt),hc[1]+ex*Math.sin(tilt)+ey*Math.cos(tilt),.8,
+      mix(pink,WHITE,.4),rv*.5*(.5+.5*Math.sin(a*3+t)));
+  }
+  drawBloom(life,t,top,d);
+  drawExtras(true,life);
+  ctx.globalCompositeOperation='lighter';
+  glow(top[0],top[1]-18,46,34,mix(pink,GOLD,.5),.16*bl);
+
+  drawFront();
+  const wave=(life-.47)/.1;
+  if(style==='Burst'&&wave>0&&wave<1)for(let i=0;i<150;i++){
+    const a=TAU*i/150,q=40+260*ease(wave)*(i%3?1:.75);
+    dot(hc[0]+Math.cos(a)*q,hc[1]+Math.sin(a)*q*.55,2*(1-wave)+.5,mix(pink,WHITE,.5),1-wave);
+  }
+  const sv=bl*(1-d);
+  if(sv>.02)for(const p of pollen){
+    const age=(t*.35+p.p)%1;
+    dot(hc[0]+Math.cos(p.a)*p.s*age,hc[1]-90*age+Math.sin(p.a)*p.s*age*.7,1.1,GOLD,sv*.9*Math.sin(Math.PI*age));
+  }
+  ctx.globalAlpha=1;
+  if(showFlies)drawFlies(t,smooth(life,.28,.14)*(1-smooth(life,.88,.1)));
+  ctx.globalAlpha=1;
+
+  // twinkles around the bloom
+  ctx.lineWidth=1;
+  for(let i=0;i<14;i++){
+    const k=Math.max(0,Math.sin(t*1.8+i*2.3))**4*bl;if(k<.05)continue;
+    const a=i*2.4,q=60+(i*37)%130,x=hc[0]+Math.cos(a)*q,y=hc[1]+Math.sin(a)*q*.65,len=4+9*k;
+    ctx.strokeStyle=rgb(WHITE,k);ctx.beginPath();
+    ctx.moveTo(x-len,y);ctx.lineTo(x+len,y);ctx.moveTo(x,y-len);ctx.lineTo(x,y+len);ctx.stroke();
+    glow(x,y,len,len,pink,.6*k);
+  }
+  // butterfly trails and tap sparkles
+  for(let i=sparks.length-1;i>=0;i--){
+    const q=sparks[i],age=(t-q.born)/q.life;
+    if(age>=1||age<0){sparks.splice(i,1);continue}
+    const e=t-q.born;
+    dot(q.x+q.vx*e,q.y+q.vy*e+30*e*e,q.r*(1-age*.6),q.col,1-age);
+  }
+  // glow: squaring a shrunken copy keeps only the bright parts, which are added back
+  ctx.setTransform(1,0,0,1,0,0);
+  for(const {c} of bloomLayers.slice(0,low?2:3)){
+    const b=c.getContext('2d');
+    b.globalCompositeOperation='copy';b.drawImage(cv,0,0,c.width,c.height);
+    b.globalCompositeOperation='multiply';b.drawImage(c,0,0);
+  }
+  const power=(scene==='Aurora'||scene==='Galaxy')?.9:.7;
+  bloomLayers.slice(0,low?2:3).forEach(({c},i)=>{ctx.globalAlpha=[.2,.28,.38][i]*power;ctx.drawImage(c,0,0,cv.width,cv.height)});
+  view(ctx);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+
+  const stage=[[.05,'SEED'],[.2,'SPROUT'],[.4,'GROWTH'],[.7,'BLOOM'],[.93,'WILT'],[2,'REBIRTH']].find(s=>life<s[0])[1];
+  const text=(extras.length?'Bouquet of '+(extras.length+1):kind)+' · '+stage+' · DAY '+String(life*91|0).padStart(3,'0');
+  if($('info').textContent!==text)$('info').textContent=text;
+  return hc;
+}
+
+// ---------- sizing, controls, loop ----------
+function resize(){
+  const vw=innerWidth,vh=innerHeight,panel=$('panel').getBoundingClientRect(),clean=document.body.classList.contains('clean');
+  if(!vw||!vh)return;
+  // the part of the screen not covered by the header or the controls
+  let aw=vw,ah=vh;const top=52;
+  const side=vw>=900||(vh<=520&&vw>vh);
+  if(CARD){if(side)aw=vw-Math.min(380,vw*.42)-16;else ah=vh*.6}
+  else if(!clean){if(vw>=900||(vh<=520&&vw>vh))aw=panel.left;else ah=panel.top}
+  const fit=Math.min(aw/(extras.length>2?540:extras.length?500:440),(ah-top)/770);
+  const dpr=Math.min(devicePixelRatio||1,2,Math.sqrt((low?9e5:2.2e6)/(vw*vh)));
+  cv.width=Math.round(vw*dpr);cv.height=Math.round(vh*dpr);scale=fit*dpr;
+  // flower art spans roughly y = 110..840 in scene units
+  const cssY=top+(ah-top-770*fit)/2-110*fit,cssX=aw/2-CX*fit;
+  V.ox=cssX*dpr;V.oy=cssY*dpr;
+  V.x0=-cssX/fit;V.x1=(vw-cssX)/fit;V.y0=-cssY/fit;V.y1=(vh-cssY)/fit;
+  for(const l of bloomLayers){l.c.width=Math.max(1,cv.width/l.k|0);l.c.height=Math.max(1,cv.height/l.k|0)}
+  paintBackdrop();
+}
+function toggle(){paused=!paused;$('play').textContent=paused?'▶':'❚❚';$('play').setAttribute('aria-label',paused?'Play':'Pause')}
+const clean=on=>{document.body.classList.toggle('clean',on);resize()};
+$('play').onclick=toggle;
+$('hide').onclick=()=>clean(true);$('show').onclick=()=>clean(false);
+$('fly').onclick=()=>{showFlies=!showFlies;$('fly').setAttribute('aria-pressed',showFlies)};
+$('seek').oninput=e=>{life=e.target.value/1000;sparks.length=0};
+document.querySelectorAll('[data-t]').forEach(tab=>tab.onclick=()=>{
+  if(tab.dataset.t==='bouquet')renderBouquet();
+  document.querySelectorAll('[data-t]').forEach(o=>{o.setAttribute('aria-selected',o===tab);$(o.dataset.t).hidden=o!==tab});
+  resize();
+});
+
+function icon(name){ // small top view of each flower
+  const f=FLOWERS[name],c=document.createElement('canvas');c.width=c.height=72;
+  const g=c.getContext('2d');g.translate(36,36);
+  const max=Math.max(...f.rings.map(x=>x[1]));
+  f.rings.slice().reverse().forEach(([n,len,wid],i)=>{
+    const L=33*len/max*(f.shape==='cup'&&i?.8:1),w=Math.min(wid/len*L*.95,L*.55);
+    for(let k=0;k<n;k++){
+      g.save();g.rotate(TAU*k/n+i*.4);g.beginPath();g.moveTo(0,0);
+      if(f.shape==='point')g.bezierCurveTo(L*.3,-w,L*.7,-w*.7,L,0),g.bezierCurveTo(L*.7,w*.7,L*.3,w,0,0);
+      else{g.bezierCurveTo(L*.35,-w*1.1,L*1.05,-w*1.1,f.shape==='notch'?L*.8:L,0);
+        if(f.shape==='notch')g.lineTo(L*.8,0);
+        g.bezierCurveTo(L*1.05,w*1.1,L*.35,w*1.1,0,0)}
+      g.fillStyle=`hsla(0,0%,100%,${.16+i*.09})`;g.fill();g.strokeStyle='rgba(255,255,255,.75)';g.lineWidth=1;g.stroke();g.restore();
+    }
+  });
+  g.fillStyle={disk:'#ffd45c',seeds:'#9a5a1e',dark:'#3a1840',pod:'#cfd96a'}[f.core]||'#ffe9a8';
+  g.beginPath();g.arc(0,0,f.core==='seeds'?13:6,0,TAU);g.fill();
+  return c;
+}
+const MENUS={kind:Object.keys(FLOWERS),style:['Gentle','Spiral','Burst','Breathing','Wave'],scene:Object.keys(SCENES)};
+function choose(id,v){
+  if(!MENUS[id].includes(v))return;
+  for(const b of $(id).children)b.setAttribute('aria-pressed',b.textContent===v);
+  if(id==='kind'){kind=v;buildPetals()}
+  if(id==='style')style=v;
+  if(id==='scene'){scene=v;if(scale)paintBackdrop()}
+  try{if(!CARD)localStorage.setItem('flower_'+id,v)}catch(e){}
+}
+for(const id in MENUS){
+  for(const v of MENUS[id]){
+    const b=document.createElement('button');
+    if(id==='kind'){b.className='card';b.append(icon(v))}
+    b.append(v);
+    b.onclick=()=>{choose(id,v);if(id!=='scene')life=.4};
+    $(id).appendChild(b);
+  }
+  let old=null;try{old=localStorage.getItem('flower_'+id)}catch(e){}
+  choose(id,MENUS[id].includes(old)?old:MENUS[id][0]);
+}
+function saveExtras(){try{if(!CARD)localStorage.setItem('flower_bouquet',JSON.stringify(extras.map(x=>[x.k,x.c])))}catch(e){}}
+function readExtras(list){ // only known flowers and plain hex colors are accepted
+  return(Array.isArray(list)?list:[]).filter(x=>Array.isArray(x)&&MENUS.kind.includes(x[0])&&/^#[0-9a-f]{6}$/i.test(x[1]))
+    .slice(0,MAX_EXTRA).map(x=>makeExtra(x[0],x[1]));
+}
+function renderBouquet(){
+  const tray=$('bouquet');tray.textContent='';
+  const button=(label,action)=>{const b=document.createElement('button');b.type='button';b.append(label);b.onclick=action;tray.append(b);return b};
+  const changed=()=>{saveExtras();renderBouquet();resize()};
+  const add=button('＋ Add '+kind,()=>{extras.push(makeExtra(kind,$('custom').value));life=.4;changed()});
+  add.disabled=extras.length>=MAX_EXTRA;
+  if(add.disabled)add.textContent='Bouquet is full';
+  extras.forEach((x,i)=>{
+    const dot=document.createElement('span');dot.className='dot';dot.style.background=x.c;
+    const b=button(dot,()=>{extras.splice(i,1);changed()});b.append(x.k+' ✕');b.setAttribute('aria-label','Remove '+x.k);
+  });
+  if(extras.length)button('Clear all',()=>{extras=[];changed()});
+  else{const n=document.createElement('span');n.className='note';n.textContent='Pick a flower and color, then add it';tray.append(n)}
+}
+try{extras=readExtras(JSON.parse(localStorage.getItem('flower_bouquet')))}catch(e){}
+$('surprise').onclick=()=>{
+  const pick=a=>a[Math.random()*a.length|0];
+  for(const id in MENUS)choose(id,pick(MENUS[id]));
+  setColor(pick(Object.values(PRESETS)));life=.4;
+};
+const point=e=>[(e.clientX*cv.width/innerWidth-V.ox)/scale,(e.clientY*cv.height/innerHeight-V.oy)/scale];
+cv.addEventListener('pointermove',e=>[touch.x,touch.y]=point(e));
+for(const ev of['pointerleave','pointerup','pointercancel'])cv.addEventListener(ev,e=>{if(ev==='pointerleave'||e.pointerType!=='mouse')touch.x=touch.y=-999});
+$('full').hidden=!document.fullscreenEnabled;
+$('full').onclick=()=>{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()};
+const step=n=>{const list=MENUS.kind;choose('kind',list[(list.indexOf(kind)+n+list.length)%list.length]);life=.4;
+  $('kind').querySelector('[aria-pressed=true]').scrollIntoView({block:'nearest',inline:'nearest'})};
+cv.addEventListener('pointerdown',e=>{
+  [touch.x,touch.y]=point(e);
+  const x=touch.x,y=touch.y;
+  for(let i=0;i<36;i++){
+    const a=Math.random()*TAU,q=30+Math.random()*110;
+    sparks.push({x,y,vx:Math.cos(a)*q,vy:Math.sin(a)*q-30,born:t,life:.7+Math.random()*.7,r:2.4,col:i%3?mix(pink,WHITE,.35):GOLD});
+  }
+});
+addEventListener('keydown',e=>{
+  if(CARD||$('maker').open||['BUTTON','INPUT','TEXTAREA'].includes(e.target.tagName))return;
+  if(e.code==='Space'){e.preventDefault();toggle()}
+  if(e.key==='h')clean(!document.body.classList.contains('clean'));
+  if(e.key==='r')life=0;
+  if(e.key==='ArrowRight')step(1);
+  if(e.key==='ArrowLeft')step(-1);
+  if(e.key==='s')$('surprise').click();
+  if(e.key==='f')$('full').click();
+});
+addEventListener('resize',resize);
+buildPetals();
+// ---------- making a card ----------
+let opened=false;
+const embeddedPage=!!$('embedded');
+const base=location.href.split('#')[0];
+$('make').onclick=()=>{
+  $('chosen').textContent=`${[kind,...extras.map(x=>x.k)].join(', ')} · ${style} bloom · ${scene} sky, in your chosen color. Close this to change them.`;
+  $('result').hidden=true;$('maker').showModal();
+};
+$('close').onclick=()=>$('maker').close();
+$('form').oninput=()=>$('result').hidden=true;
+let payload=null;
+const readAudio=file=>new Promise((ok,no)=>{const f=new FileReader();f.onload=()=>ok('data:audio/mpeg;base64,'+f.result.split(',')[1]);f.onerror=no;f.readAsDataURL(file)});
+$('form').onsubmit=async e=>{
+  e.preventDefault();
+  const msg=$('msg').value.trim(),pass=$('pass').value,file=$('music').files[0];
+  const say=t=>{$('result').hidden=false;$('status').textContent=t;$('result').scrollIntoView({block:'nearest'})};
+  const stop=t=>{say(t);$('linkBox').hidden=$('download').hidden=true;$('privacy').textContent=''};
+  if(!msg){$('msg').value='';$('form').reportValidity();return}
+  if(file&&(file.size>8*1024*1024||!/\.mp3$/i.test(file.name)))return stop('Please choose an MP3 file of 8 MB or less.');
+  try{
+    stop('Creating your card…');
+    const card={t:$('to').value.trim(),m:msg,f:$('from').value.trim(),k:kind,s:style,y:scene,c:$('custom').value,x:extras.map(x=>[x.k,x.c])};
+    // the link never carries the music: an MP3 is far too big for a web address
+    const link=pass?'#lock='+urlSafe(await encrypt(card,pass)):'#card='+urlSafe(toB64(utf8(JSON.stringify(card))));
+    if(file)card.a=await readAudio(file);
+    payload=pass?{e:await encrypt(card,pass)}:card;
+    $('link').value=base+link;
+    $('copy').textContent='Copy link';
+    $('linkBox').hidden=!!file||embeddedPage;$('download').hidden=false;
+    $('warn').hidden=location.protocol.startsWith('http');
+    say(file?'Your card has music, so it is a page of its own. Download it, then upload it to your GitHub repository to get a link.':'Your card is ready.');
+    $('privacy').textContent=pass?'Locked: only someone with the password can read it. Send the password separately. It cannot be recovered.':'Not locked: anyone who has the link or file can read it.';
+  }catch(err){stop('Could not create the card. Open this page over https (such as GitHub Pages) and try again.')}
+};
+$('download').onclick=()=>{
+  // build a page that holds only this card
+  const data='<script type="application/json" id="embedded">'+JSON.stringify(payload).replace(/</g,'\\u003c')+'<\/script>';
+  const mark='<script>\n"use strict";';
+  const at=PRISTINE.indexOf(mark);
+  const page='<!doctype html>\n'+PRISTINE.slice(0,at).replace('<head>','<head>\n<meta name="robots" content="noindex,nofollow">')+data+'\n'+PRISTINE.slice(at);
+  const a=document.createElement('a'),id=Array.from(crypto.getRandomValues(new Uint8Array(5)),n=>n.toString(16).padStart(2,'0')).join('');
+  a.href=URL.createObjectURL(new Blob([page],{type:'text/html'}));a.download='card-'+id+'.html';
+  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),30000);
+};
+$('copy').onclick=async()=>{
+  try{await navigator.clipboard.writeText($('link').value);$('copy').textContent='Copied'}
+  catch(e){$('link').select();$('copy').textContent='Press Ctrl+C or hold to copy'}
+};
+$('share').hidden=!navigator.share;
+$('share').onclick=()=>navigator.share({title:'A flower for you',url:$('link').value}).catch(()=>{});
+$('preview').onclick=()=>window.open($('link').value,'_blank');
+
+// ---------- ready-made messages ----------
+const WORDS={"Comfort": ["You don't have to be okay today. I'm still here.", "Take it one breath at a time. That is more than enough.", "Even quiet days count. Rest without guilt.", "Whatever you're carrying, you don't have to carry it alone.", "This feeling is heavy, but it is not the whole story.", "It's alright to move slowly. Flowers do it all the time.", "I may not have the right words, but I have time for you.", "You've made it through hard days before, and I'm proud of you.", "Cry if you need to. I won't think any less of you.", "There is no deadline for healing.", "You are not a burden. You never were to me.", "Let today be small. Tomorrow can wait its turn.", "I'm sending you a little calm, and a seat beside me whenever you want it.", "Your worth did not change just because the day was bad.", "When you're ready to talk, I'm ready to listen."], "Sweet": ["You are my favorite part of the day.", "I saw a flower and thought of you, so I made it glow.", "My heart does a little jump every time your name shows up.", "If I could, I'd give you a whole garden. Start with this one.", "You make ordinary days feel like something worth keeping.", "I like you more than yesterday, and yesterday was a lot.", "Your smile is the nicest thing I've seen all week.", "With you, even silence feels warm.", "You're the person I want to tell everything to.", "This flower never wilts for long, just like how I feel about you.", "Somewhere between hello and now, you became home.", "I hope you know how easy you are to love.", "No reason. Just wanted you to know I'm thinking of you.", "You're proof that good things still happen.", "Out of every path, I'm glad mine crossed yours."], "Friendship": ["Thanks for being the friend who stays.", "Life is better with you in the group chat.", "You laugh at my worst jokes. That is true loyalty.", "No matter how long we don't talk, we're good.", "I got you. Always.", "You're one of the reasons I made it this far.", "Same chaos, same team.", "Thank you for knowing when I'm not really fine.", "Here's a flower, because buying real ones costs money.", "You're the kind of friend people wish for."], "Birthday": ["Happy birthday! May this year be gentle and bright for you.", "Another year of you. The world got lucky.", "Wishing you cake, laughter and people who adore you.", "Happy birthday! Go bloom as big as you like.", "May your wishes find their way to you this year.", "Today is all yours. Enjoy every minute.", "Older, wiser, and still my favorite.", "I hope this year surprises you in the best ways.", "Happy birthday! I'm so glad you were born.", "Here's to new memories, and to you."], "Motivation": ["Small steps still move you forward.", "You don't need to be perfect to begin.", "Grow at your own pace. Nothing is behind schedule.", "The bud doesn't rush. It still opens.", "You are more capable than your doubts say.", "Try again tomorrow. Trying counts.", "Hard things become familiar things.", "Your effort is not invisible. I see it.", "One page, one line of code, one step. Keep going.", "Rest if you must, then come back stronger.", "You've learned things you once thought impossible.", "Start messy. Fix it later."], "Thank you": ["Thank you for your kindness. It stayed with me.", "You helped more than you know.", "I'm grateful for you today and every day.", "Thank you for your patience with me.", "What you did mattered. Truly.", "You showed up when it counted. Thank you.", "A small flower for a very big thank you.", "Thank you for believing in me before I did."], "Sorry": ["I'm sorry. I was wrong, and I want to make it right.", "I hurt you, and I'm not going to make excuses.", "Take the time you need. I'll be here when you're ready.", "I miss how we were. I'm willing to do the work.", "I should have listened better. I'm sorry.", "You deserved more care from me.", "I don't expect a quick yes. I just wanted you to know I'm sorry."], "Miss you": ["I miss you more than I planned to.", "The days are a bit quieter without you.", "Come back soon. I saved stories for you.", "Distance is just space. You're still close to me.", "I looked up at the sky and wondered what you were doing.", "Wish you were here to see this one.", "I still think of you at the small moments."], "Get well": ["Get well soon. The world can wait while you rest.", "Sending you strength and a very soft blanket.", "Drink water, sleep well, and let people care for you.", "I hope each day feels a little lighter than the last.", "Thinking of you and cheering for your recovery.", "No need to reply. Just rest."], "Congrats": ["You did it! I never doubted you.", "Congratulations! All that work has finally bloomed.", "So proud of you. Celebrate properly!", "This is only the beginning for you.", "You earned every bit of this.", "Look how far you've come."], "Good night": ["Good night. Let your worries sleep too.", "The stars have the night shift. You can rest now.", "Sleep softly. You did enough today.", "I hope your dreams are kind to you.", "Good night. See you in the morning light.", "Close your eyes. Tomorrow is a fresh page."], "Tagalog": ["Nandito lang ako kapag kailangan mo ako.", "Pahinga ka muna. Okay lang 'yan.", "Ingat ka palagi, ha.", "Salamat dahil nandiyan ka.", "Proud ako sa'yo, kahit hindi ko laging nasasabi.", "Maligayang kaarawan! Sana masaya ka ngayon at araw-araw.", "Miss na kita. Kita tayo soon.", "Pasensya na. Gusto kong bumawi.", "Kaya mo 'yan. Dahan-dahan lang.", "Mahalaga ka sa akin."]};
+let mood=Object.keys(WORDS)[0];
+const useMessage=text=>{$('msg').value=text;$('result').hidden=true};
+function showMood(name){
+  mood=name;
+  for(const b of $('moods').children)b.setAttribute('aria-pressed',b.textContent===name);
+  $('lines').textContent='';$('lines').scrollTop=0;
+  for(const line of WORDS[name]){
+    const b=document.createElement('button');b.type='button';b.textContent=line;
+    b.onclick=()=>{useMessage(line);$('ideas').open=false;$('msg').scrollIntoView({block:'nearest'})};
+    $('lines').append(b);
+  }
+}
+for(const name in WORDS){
+  const b=document.createElement('button');b.type='button';b.textContent=name;b.onclick=()=>showMood(name);$('moods').append(b);
+}
+showMood(mood);
+$('random').onclick=()=>{
+  const list=WORDS[mood].filter(m=>m!==$('msg').value);
+  useMessage(list[Math.random()*list.length|0]);
+};
+
+// ---------- opening a card ----------
+let music=null;
+function applyCard(c){
+  const text=(v,n)=>typeof v==='string'?v.slice(0,n):'';
+  const to=text(c.t,40),from=text(c.f,40);
+  choose('kind',c.k);choose('style',c.s);choose('scene',c.y);
+  if(/^#[0-9a-f]{6}$/i.test(c.c)){setColor(c.c);pink=target.slice()}
+  extras=readExtras(c.x);resize();
+  // textContent only: nothing from a card is ever treated as HTML
+  document.querySelector('h1').textContent=(extras.length?'FLOWERS':'A FLOWER')+' FOR '+(to?to.toUpperCase():'YOU');
+  $('toLine').textContent=to?'Dear '+to+',':'';
+  $('body').textContent=text(c.m,400);
+  $('fromLine').textContent=from?'— '+from:'';
+  if(typeof c.a==='string'&&c.a.startsWith('data:audio/mpeg;base64,')){
+    music=new Audio(c.a);music.loop=true;document.body.classList.add('music');
+  }
+}
+if(CARD){
+  extras=[];
+  document.body.classList.add('card');
+  document.querySelector('h1').textContent='A FLOWER FOR YOU';
+  if(CARD.file)document.body.classList.add('standalone');
+  if(CARD.locked)document.body.classList.add('locked');else applyCard(CARD.data);
+}
+$('unlock').onsubmit=async e=>{
+  e.preventDefault();$('wrong').textContent='Checking…';
+  try{
+    const data=await decrypt(CARD.locked,$('key').value);
+    if(!valid(data))throw 0;
+    applyCard(data);$('key').value='';document.body.classList.remove('locked');
+  }catch(err){$('wrong').textContent='That password did not work, or the card is damaged.'}
+};
+$('open').onclick=()=>{
+  opened=true;life=0;document.body.classList.add('opened');
+  if(music)music.play().catch(()=>{$('mute').textContent='🔇'}); // started by the tap, as browsers require
+};
+$('mute').onclick=()=>{
+  if(music.paused){music.muted=false;music.play()}else music.muted=!music.muted;
+  $('mute').textContent=music.muted?'🔇':'🔊';
+  $('mute').setAttribute('aria-label',music.muted?'Unmute music':'Mute music');
+};
+$('again').onclick=()=>{life=0;sparks.length=0;document.body.classList.remove('read')};
+$('own').onclick=()=>{history.replaceState(null,'',base);location.reload()};
+addEventListener('hashchange',()=>location.reload());
+resize();
+
+let last=performance.now(),hc=[CX,300];
+function loop(now){
+  const raw=(now-last)/1000,dt=Math.min(raw,.05);last=now;
+  slow=raw>1/34&&raw<.5?slow+raw:Math.max(0,slow-raw*.5);
+  if(!low&&slow>3){low=true;resize()}
+  pink=mix(pink,target,Math.min(1,dt*6));
+  // when paused, time stops for the flower but tap sparkles still finish
+  t+=dt;
+  if(!paused){
+    if(!CARD)life=(life+dt/LIFE)%1;
+    else if(opened){life=Math.min(BLOOMED,life+dt/LIFE*2);if(life>.58)document.body.classList.add('read')}
+    moveFlies(dt,t,hc);$('seek').value=life*1000;if(showFlies&&life>.35&&life<.85)trails()}
+  hc=draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
